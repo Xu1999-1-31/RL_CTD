@@ -1,0 +1,26 @@
+-------------------------------------------------------
+
+PrimeTime save_session README file
+
+-------------------------------------------------------
+
+PrimeTime Version: 
+	R-2020.09-SP4 for linux64 -- Feb 24, 2021
+Save Session Date:
+	Wed Oct 23 19:20:02 2024
+ 
+-------------------------------------------------------
+
+Command log of this session is saved in "cmd_log".
+If the saved session is moved to a different location, 
+    please update the paths in the cmd_log file accordingly, 
+    in order to use the Constraints in-design flow.
+-------------------------------------------------------
+
+Current Design: wb_conmax_top
+
+Technology librares referenced by this session:
+/home/jiajiexu/DT_ECO/work/Timing_Lib/scc14nsfp_90sdb_9tc16_rvt_ssg_v0p63_125c_ccs.db     scc14nsfp_90sdb_9tc16_rvt_ssg_v0p63_125c_ccs.db
+-------------------------------------------------------
+At least 31 MB of free disk space in pt_tmp_dir will be required to restore this session.
+-------------------------------------------------------
