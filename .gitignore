@@ -16,6 +16,11 @@ work/log/*
 work/Delay_scripts/*
 !work/Delay_scripts/.gitkeep
 
+work/Saved_session/*
+!work/Saved_session/.gitkeep
+
+work/VerilogInline/*
+
 work/Timing_Lib/*
 !work/Timing_Lib/.gitkeep
 
@@ -33,3 +38,6 @@ wandb/*
 *.csv
 runtime
 nohup.out
+
+bak/
+Origin_bak/
