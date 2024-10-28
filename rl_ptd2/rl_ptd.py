@@ -280,29 +280,23 @@ class RL_PTD(gym.Env):
         ''' self.graph update here '''
         New_Region_TNS = self._Get_Region_TNS(self.current_design + '_eco')
         New_Region_DRC = self._Get_Region_DRC(self.current_design + '_eco')
-        scaler = MinMaxScaler()
-        RegionTNS_flattened = New_Region_TNS.flatten().reshape(-1, 1)
-        scaler.fit(RegionTNS_flattened)
-        scaler.data_min_ = np.min(self.Region_TNS)
-        scaler.data_max_ = np.max(self.Region_TNS)
-        RegionTNS_normalized = scaler.fit_transform(RegionTNS_flattened)
-        RegionTNS_normalized = RegionTNS_normalized.reshape(self.row, self.column)
+        
+        min_val = np.min(self.Region_TNS)
+        max_val = np.max(self.Region_TNS)
+        RegionTNS_normalized = (New_Region_TNS - min_val) / (max_val - min_val)
         # print(self.RegionTNS_normalized, RegionTNS_normalized)
 
-        scaler = MinMaxScaler()
-        RegionDRC_flattened = New_Region_DRC.flatten().reshape(-1, 1)
-        scaler.fit(RegionDRC_flattened)
-        scaler.data_min_ = np.min(self.Region_DRC)
-        scaler.data_max_ = np.max(self.Region_DRC)
-        RegionDRC_normalized = scaler.fit_transform(RegionDRC_flattened)
-        RegionDRC_normalized = RegionDRC_normalized.reshape(self.row, self.column)
+        min_val = np.min(self.Region_DRC)
+        max_val = np.max(self.Region_DRC)
+        RegionDRC_normalized = (New_Region_DRC - min_val) / (max_val - min_val)
         # print(self.RegionDRC_normalized, RegionDRC_normalized)
         
-        rewards = [1 - RegionDRC_normalized/(self.RegionDRC_normalized + 1), 1 - RegionTNS_normalized/(self.RegionTNS_normalized + 1)]
+        rewards = [2 - RegionDRC_normalized/(self.RegionDRC_normalized + 1), RegionTNS_normalized/(self.RegionTNS_normalized + 1)]
         # get reward list
         reward_list = []
         for reward1, reward2 in zip(np.nditer(rewards[0]), np.nditer(rewards[1])):
             reward_list.append(np.array([reward1, reward2]))
+            # print(0.5*reward1 + 0.5*reward2)
         
         self.Sub_CellLayout, _ = DataBuilder.BuildCellData(self.current_design + '_eco', self.row, self.column)
         self.Sub_PinLayout = DataBuilder.BuildPinData(self.current_design + '_eco', self.row, self.column)
