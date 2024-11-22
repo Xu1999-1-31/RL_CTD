@@ -12,4 +12,4 @@ def ReBuildPtScripts(design=None):
         for design in Global_var.Designs:
             PtDelayScript_Writer.Write_PtDelayScrip(design)
 
-# ReBuildPtScripts()
+#ReBuildPtScripts('usbf_top')

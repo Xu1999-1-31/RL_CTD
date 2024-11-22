@@ -73,7 +73,7 @@ def TimingGraphTrans(design, rebuilt=False, verbose=False):
                 nodes_feature_backward[node_number] = [arc.loadCap, arc.loadRes]
 
     # Collect Critical Path data
-    Endpoint = {nodes[path.Cellarcs[-1].name.split('->')[0].split('/')[0]]: path.slack for path in Critical_Paths}
+    Endpoint = {nodes[path.Cellarcs[-1].name.split('->')[0].split('/')[0]]: path.slack for path in Critical_Paths if path.Cellarcs}
     FlipFlops = [nodes[path.Endpoint.replace('', '')] for path in Critical_Paths if path.Endpoint.replace('', '') in nodes]
 
     # Build graph
@@ -83,27 +83,56 @@ def TimingGraphTrans(design, rebuilt=False, verbose=False):
     G.ndata['backward_feature'] = torch.from_numpy(nodes_feature_backward)
     # G.ndata['Pt_slack'] = torch.from_numpy(np.zeros((num_nodes, 2), dtype=np.float32)) # tns ,wns for pt optimization
 
-    # DFS function to calculate TNS and WNS
-    def dfs(node, visited, current_slack, start_endpoint):
-        if node in visited or node in FlipFlops or (node in Endpoint and node != start_endpoint):
-            return
+    # # DFS function to calculate TNS and WNS
+    # def dfs(node, visited, current_slack, start_endpoint):
+    #     if node in visited or node in FlipFlops or (node in Endpoint and node != start_endpoint):
+    #         return
 
-        visited.add(node)
-        tns = current_slack
-        wns = current_slack
+    #     visited.add(node)
+    #     tns = current_slack
+    #     wns = current_slack
 
-        for pred in G.predecessors(node):
-            dfs(pred.item(), visited, current_slack, start_endpoint)
+    #     for pred in G.predecessors(node):
+    #         dfs(pred.item(), visited, current_slack, start_endpoint)
             
-        G.ndata['bidirection_feature'][node, 1] += tns  # Accumulate TNS
-        G.ndata['bidirection_feature'][node, 2] = min(G.ndata['bidirection_feature'][node, 2], wns)  # Update WNS
+    #     G.ndata['bidirection_feature'][node, 1] += tns  # Accumulate TNS
+    #     G.ndata['bidirection_feature'][node, 2] = min(G.ndata['bidirection_feature'][node, 2], wns)  # Update WNS
 
-    # Perform DFS for each endpoint
-    for endpoint, slack in Endpoint.items():
+    # # Perform DFS for each endpoint
+    # for endpoint, slack in Endpoint.items():
+    #     visited = set()
+    #     G.ndata['bidirection_feature'][endpoint, 1] = slack  # TNS for endpoint is its slack
+    #     G.ndata['bidirection_feature'][endpoint, 2] = slack  # WNS for endpoint is its slack
+    #     dfs(endpoint, visited, slack, endpoint)
+
+    def dfs_iterative(start_node, initial_slack, start_endpoint, G, FlipFlops, Endpoint):
+        # Initialize stack with start node, initial slack, and visited set
+        stack = [(start_node, initial_slack, initial_slack)]
         visited = set()
-        G.ndata['bidirection_feature'][endpoint, 1] = slack  # TNS for endpoint is its slack
-        G.ndata['bidirection_feature'][endpoint, 2] = slack  # WNS for endpoint is its slack
-        dfs(endpoint, visited, slack, endpoint)
+
+        while stack:
+            node, tns, wns = stack.pop()
+
+            # Skip if already visited, or if it is a FlipFlop or different endpoint
+            if node in visited or node in FlipFlops or (node in Endpoint and node != start_endpoint):
+                continue
+
+            # Mark node as visited
+            visited.add(node)
+
+            # Accumulate TNS and update WNS for this node
+            G.ndata['bidirection_feature'][node, 1] += tns
+            G.ndata['bidirection_feature'][node, 2] = min(G.ndata['bidirection_feature'][node, 2], wns)
+
+            # Process predecessors with updated slack
+            for pred in G.predecessors(node):
+                # Pass along the accumulated TNS and update WNS as the min of current path slack
+                stack.append((pred.item(), initial_slack, initial_slack))
+
+    # Perform DFS iteratively for each endpoint
+    for endpoint, slack in Endpoint.items():
+        # Start the iterative DFS
+        dfs_iterative(endpoint, slack, endpoint, G, FlipFlops, Endpoint)
     
     
     # Save the graph and node dictionary

@@ -15,4 +15,4 @@ def ReadRouteCongestion(inrpt, scale):
             if line.startswith('V routing'):
                 V_congestion[row][column] = int(line.split()[3])
     
-    return H_congestion, V_congestion
+    return H_congestion[::-1, :], V_congestion[::-1, :]

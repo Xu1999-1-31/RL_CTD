@@ -44,3 +44,6 @@ nohup.out
 
 bak/
 Origin_bak/
+DataTrans/test.py
+plot.py
+rewards/

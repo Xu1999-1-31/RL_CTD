@@ -20,9 +20,9 @@ import torch.optim as optim
 import dgl
 import wandb
 
-from RL_PTD_Buffer import ReplayBuffer
+from RL_CTD_Buffer import ReplayBuffer
 from morl_baselines.common.evaluation import log_episode_info
-from RL_PTD_Morl_algorithm import MOPolicy
+from RL_Algorithm.RL_CTD_Morl_algorithm import MOPolicy
 from morl_baselines.common.networks import mlp, polyak_update
 from morl_baselines.common.morl_algorithm import MOAgent
 
@@ -133,7 +133,7 @@ class MOSACActor(nn.Module):
         return action, log_probs, action_probs
 
 
-class RL_PTD(MOPolicy, MOAgent):
+class RL_CTD(MOPolicy, MOAgent):
     """Multi-objective Soft Actor-Critic (SAC) algorithm.
 
     It is a multi-objective version of the SAC algorithm, with multi-objective critic and weighted sum scalarization.
@@ -153,8 +153,8 @@ class RL_PTD(MOPolicy, MOAgent):
         policy_lr: float = 3e-4,
         q_lr: float = 1e-3,
         a_lr: float = 1e-3,
-        project_name: str = "RL_PTD",
-        experiment_name: str = "rl_ptd_v2",
+        project_name: str = "RL_CTD",
+        experiment_name: str = "rl_ctd_v0",
         policy_freq: int = 2,
         target_net_freq: int = 1,
         alpha: float = 0.2,
@@ -166,7 +166,7 @@ class RL_PTD(MOPolicy, MOAgent):
         log_every: int = 1000,
         seed: int = 42,
         parent_rng: Optional[np.random.Generator] = None,
-        update_frequency = 4,
+        update_frequency = 1,
     ):
         """Initialize the MOSAC algorithm.
 
@@ -421,7 +421,7 @@ class RL_PTD(MOPolicy, MOAgent):
             qf_loss.backward()
             self.q_optimizer.step()
 
-            if n % self.policy_freq == 0:  # TD 3 Delayed update support
+            if self.global_step % self.policy_freq == 0:  # TD 3 Delayed update support
                 for _ in range(self.policy_freq):  # compensate for the delay by doing 'actor_update_interval' instead of 1
                     next_state_actions, log_probs, action_probs = self.actor.get_action(mb_obs)
                     entropies = th.sum(action_probs * log_probs, dim=1)
@@ -445,13 +445,13 @@ class RL_PTD(MOPolicy, MOAgent):
                         self.alpha = max(self.log_alpha.exp().item(), 0.01)
 
             # update the target networks
-            if n % self.target_net_freq == 0:
+            if self.global_step % self.target_net_freq == 0:
                 polyak_update(params=self.qf1.parameters(), target_params=self.qf1_target.parameters(), tau=self.tau)
                 polyak_update(params=self.qf2.parameters(), target_params=self.qf2_target.parameters(), tau=self.tau)
                 self.qf1_target.requires_grad_(False)
                 self.qf2_target.requires_grad_(False)
 
-            if n % 1 == 0 and self.log:
+            if self.global_step % 2 == 0 and self.log:
                 log_str = f"_{self.id}" if self.id is not None else ""
                 to_log = {
                     f"losses{log_str}/alpha": self.alpha,
@@ -537,7 +537,7 @@ class RL_PTD(MOPolicy, MOAgent):
                     rewards_to_log += 0.5 * reward_list[i][0] + 0.5 * reward_list[i][1]  # Convert tensor to numpy array for easier handling 
                     with open(csv_filename, mode='a', newline='') as file: 
                         writer = csv.writer(file) 
-                        writer.writerow([action_list[i], 0.5 * (reward_list[i][0] + reward_list[i][1])])  
+                        writer.writerow([action_list[i], reward_list[i][0], reward_list[i][1], 0.5 * (reward_list[i][0] + reward_list[i][1])])  
                 with open(csv_filename, mode='a', newline='') as file: 
                         writer = csv.writer(file) 
                         writer.writerow(["TNS:", state_vector[3], "DRC:", state_vector[5]])
