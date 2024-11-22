@@ -59,9 +59,9 @@
  #	Description     :
  #
  #==========================================================================================================
-#set dimens_init 4
+#set dimens_init $dimens 
 #for {set scale_ratio 0} {$scale_ratio < 11} {incr scale_ratio} {
-#	set dimens [expr $dimens_init/(2**$scale_ratio)]
+	#set dimens [expr $dimens_init/(2**$scale_ratio)]
 	set bbox_block [get_attribute [current_block] boundary_bbox]
 	set ll [lindex $bbox_block 0]
 	set ur [lindex $bbox_block 1]
@@ -71,11 +71,11 @@
 	set ury_block [lindex $ur 1]
 
 	for {set i 0} {$i < $dimens} {incr i} {
-		set llx [expr $llx_block+($urx_block-$llx_block)/$dimens*$i]
-		set urx [expr $urx_block+($urx_block-$llx_block)/$dimens*($i+1)]
+		set llx [expr ($urx_block-$llx_block)/$dimens*$i]
+		set urx [expr ($urx_block-$llx_block)/$dimens*($i+1)]
 		for {set j 0} {$j < $dimens} {incr j} {
-			set lly [expr $lly_block+($ury_block-$lly_block)/$dimens*$j]
-			set ury [expr $ury_block+($ury_block-$lly_block)/$dimens*($j+1)]
+			set lly [expr ($ury_block-$lly_block)/$dimens*$j]
+			set ury [expr ($ury_block-$lly_block)/$dimens*($j+1)]
 			echo "## X/Y tile count $dimens*$dimens; row=$i, column=$j; bbox (($llx, $lly), ($urx, $ury))"
 			eval "report_congestion -boundary {{$llx $lly} {$urx $ury}} -nosplit"
 		}

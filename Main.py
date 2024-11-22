@@ -1,9 +1,9 @@
 import argparse
 import mo_gymnasium as mo_gym
-import RL_PTD
+import RL_CTD
 import tee
 
-parser = argparse.ArgumentParser(description='This is the main python program for RL_PTD project.')
+parser = argparse.ArgumentParser(description='This is the main python program for RL_CTD project.')
 
 parser.add_argument('--train', action='store_false', help='Train the model')
 parser.add_argument('--stdout', type=str, help='File path to redirect stdout')
@@ -40,12 +40,12 @@ if not args.disable_log:
 if __name__ == '__main__':
     if args.train:
         with tee.StdoutTee(stdout_file), tee.StderrTee(stderr_file):
-            env = mo_gym.make('rl-ptd-v2')
+            env = mo_gym.make('rl-ctd-v0', current_design = 'mc_top', ReBuildRpt = True)
             # reset env and agent
             env.reset()
-            agent = RL_PTD.create_agent(env)
+            agent = RL_CTD.create_agent(env)
             agent.train(
-                total_timesteps=1000,
+                total_timesteps=1,
                 eval_env=env,
             )
 

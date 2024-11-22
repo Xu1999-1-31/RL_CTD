@@ -3,6 +3,7 @@ echo "INFORM: Start job at: " [clock format $starttime -gmt false]
 set is_si_enabled false
 
 set top_design aes_cipher_top
+#set top_design usbf_top
 
 set link_library "* ../Timing_Lib/scc14nsfp_90sdb_9tc16_rvt_ssg_v0p63_125c_ccs.db"
 
@@ -47,7 +48,7 @@ report_net -connections -verbose > ../PtRpt/${top_design}_net.rpt
 # report_analysis_coverage -status_details violated -check_type setup -nosplit -significant_digits 8 > ../PtRpt/${top_design}_violated_endpoint.rpt
 # report_analysis_coverage -status_details met -check_type setup -nosplit -significant_digits 8 > ../PtRpt/${top_design}_met_endpoint.rpt
 # report_analysis_coverage -status_details untested -check_type setup -nosplit -significant_digits 8 > ../PtRpt/${top_design}_untested_endpoint.rpt
-# write_sdf -significant_digits 8 -input_port_nets -output_port_nets ../PtRpt/${top_design}.sdf
+write_sdf -significant_digits 8 -input_port_nets -output_port_nets ../PtRpt/${top_design}.sdf
 
 
 if {[file exists ../Delay_scripts/${top_design}_Delay.tcl]} {

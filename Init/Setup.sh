@@ -9,17 +9,17 @@ else
     echo "mo_gymnasium installation path: $MO_GYM_PATH"
 
 
-    # Check if ../rl_ptd2 directory exists
-    if [ -d "../rl_ptd2" ]; then
+    # Check if ../rl_ctd directory exists
+    if [ -d "../rl_ctd" ]; then
         # Create the envs directory if it does not exist
         if [ ! -d "$MO_GYM_PATH/envs" ]; then
             mkdir -p "$MO_GYM_PATH/envs"
             echo "Created envs directory at $MO_GYM_PATH/envs"
         fi
 
-        # Copy ../rl_ptd2 to $MO_GYM_PATH/envs
-        cp -r ../rl_ptd2 "$MO_GYM_PATH/envs"
-        echo "Copied ../rl_ptd2 to $MO_GYM_PATH/envs"
+        # Copy ../rl_ctd to $MO_GYM_PATH/envs
+        cp -r ../rl_ctd "$MO_GYM_PATH/envs"
+        echo "Copied ../rl_ctd to $MO_GYM_PATH/envs"
 
         # Check if the __init__.py file exists in the envs directory
         if [ -f "$MO_GYM_PATH/envs/__init__.py" ]; then
@@ -37,7 +37,7 @@ else
             echo "__init__.py not found in current directory"
         fi
     else
-        echo "../rl_ptd2 directory does not exist"
+        echo "../rl_ctd directory does not exist"
     fi
 
 fi

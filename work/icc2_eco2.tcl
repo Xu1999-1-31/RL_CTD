@@ -1,7 +1,7 @@
 set_svf -off
-# set_host_options -max_cores 8
+set_host_options -max_cores 8
 set bench aes_cipher_top
-open_lib ../Icc2Ndm/${bench}_nlib
+open_lib ../Icc2Ndm/${bench}_nlib2
 copy_block -from_block ${bench} -to_block ${bench}_dt_eco
 open_block ${bench}_dt_eco
 link_block
@@ -21,4 +21,4 @@ report_global_timing
 save_block
 
 source ../icc2_eco_rpt.tcl
-exit
+#exit

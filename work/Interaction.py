@@ -5,6 +5,7 @@ import sys
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(root_dir)
 import Global_var
+import ReBuildPtScripts
 
 def check_command(command_name):
     # check if the command is available
@@ -55,6 +56,28 @@ def Run_Icc2_Script(script):
     # check the return code
     print('Return code:', process.returncode)
 
+def Write_Pt_Cells_Scripts(design, verbose=False):
+    file = os.path.join(Global_var.work_dir, 'pt_rpt.tcl')
+    with open(file, 'r') as file:
+        script_content = file.read()
+    updated_content = script_content.replace('set top_design aes_cipher_top', f'set top_design {design}')
+    updated_content = script_content.replace('update_timing -full', '#update_timing -full')
+    updated_content = updated_content.replace('report_timing -nosplit -nets -input_pins -transition_time -capacitance -significant_digit 6 -max_path 100000 > ../PtRpt/${top_design}.rpt',
+                                            '#report_timing -nosplit -nets -input_pins -transition_time -capacitance -significant_digit 6 -max_path 100000 > ../PtRpt/${top_design}.rpt')
+    updated_content = updated_content.replace('report_global_timing -significant_digits 8 > ../PtRpt/${top_design}_global.rpt',
+                                            '#report_global_timing -significant_digits 8 > ../PtRpt/${top_design}_global.rpt')
+    updated_content = updated_content.replace('if {[file exists ../Delay_scripts/${top_design}_Delay.tcl]} {',
+                                            '#if {[file exists ../Delay_scripts/${top_design}_Delay.tcl]} {')
+    updated_content = updated_content.replace('    source ../Delay_scripts/${top_design}_Delay.tcl > ../PtRpt/${top_design}_Delay.rpt',
+                                            '#    source ../Delay_scripts/${top_design}_Delay.tcl > ../PtRpt/${top_design}_Delay.rpt')
+    updated_content = updated_content.replace('}\n', '#}\n')
+    script_filename = os.path.join(Global_var.work_dir, f'{design}_pt_rpt.tcl')
+    with open(script_filename, 'w') as new_file:
+        new_file.write(updated_content)
+
+    if verbose:
+        print(f"Generated PT Cells script for {design}")
+    
 def Write_Pt_Scripts(design, ECO=True, VerilogInline=False, verbose=False):
     if ECO and VerilogInline:
         raise ValueError("ECO and VerilogInline cannot both be True at the same time.")
@@ -197,15 +220,24 @@ def PT_Incremental_ECO_Iteration(design, verbose=False):
     Delete_Temp_Scripts(design, verbose)
 
 def Write_Icc2_ECO_Command(design, commands):
-    path = os.path.join(Global_var.work_dir, f'ECO_ChangeList/{design}_ptd_eco.tcl')
+    path = os.path.join(Global_var.work_dir, f'ECO_ChangeList/{design}_ctd_eco.tcl')
     with open(path, 'w') as file:
         file.write(f'current_instance\n')
         for command in commands:
             file.write(command)
 
-def RLPTD_Iteration(design, verbose=False): # one eco iteriation: incremental PR and PT
+def RLCTD_Iteration(design, verbose=False): # one eco iteriation: incremental PR and PT
     Write_Icc2_ECO_Scripts(design, verbose)
     Run_Icc2_Script(f'{design}_icc2_eco.tcl')
     Write_Pt_Scripts(design, True, False, verbose) # Write PT script for ECO
     Run_Pt_Script(f'{design}_pt_rpt.tcl')
     Delete_Temp_Scripts(design, verbose)
+    
+def ReBuildAllRpt(design, verbose=False):
+    Write_Icc2_Scripts(design, verbose)
+    Run_Icc2_Script(f'{design}_icc2_rpt.tcl')
+    Write_Pt_Cells_Scripts(design, verbose)
+    Run_Pt_Script(f'{design}_pt_rpt.tcl')
+    ReBuildPtScripts.ReBuildPtScripts(design)
+    Write_Pt_Scripts(design, ECO=False, VerilogInline=False, verbose=verbose)
+    Run_Pt_Script(f'{design}_pt_rpt.tcl')
