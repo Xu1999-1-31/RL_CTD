@@ -1,6 +1,8 @@
 import subprocess
 import shutil
+import signal
 import os
+import atexit
 import sys
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(root_dir)
@@ -12,49 +14,136 @@ def check_command(command_name):
     return shutil.which(command_name) is not None
 
 def Run_Pt_Script(script):
+    """
+    Run a PrimeTime (pt_shell) script using subprocess, ensuring child processes
+    are terminated when the main process exits or is killed.
+
+    Args:
+        script (str): The name of the script to run.
+    """
     if not check_command('pt_shell'):
         raise EnvironmentError("Error: 'pt_shell' not found. Please ensure PrimeTime is correctly installed and added to your PATH.")
+    
     command = ['pt_shell', '-f', '../' + script]
     working_directory = os.path.join(Global_var.work_dir, 'log/')
+    
+    # Create the working directory if it doesn't exist
     if not os.path.exists(working_directory):
         os.makedirs(working_directory)
-    print(f'Running PT script: {script} in {working_directory}')
-    with subprocess.Popen(command, cwd=working_directory, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1, universal_newlines=True) as process:
-        for line in process.stdout:
-            print(line, end='')  # cmd output     
-        for err_line in process.stderr:
-            print(err_line, end='')  # cmd err
-        # stdout, stderr = process.communicate()
-        
-        # wait for the process to exit
-        process.wait()
-
-    # print(stdout)
-    # print(stderr)
     
-    # check the return code
+    print(f'Running PT script: {script} in {working_directory}')
+    
+    # Start the subprocess and assign it to a new process group
+    process = subprocess.Popen(
+        command,
+        cwd=working_directory,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        bufsize=1,
+        universal_newlines=True,
+        preexec_fn=os.setsid  # Create a new process group
+    )
+    
+    # Register cleanup to terminate child processes on exit
+    def cleanup():
+        if process.poll() is None:  # Check if the process is still running
+            print("Terminating PT subprocess...")
+            os.killpg(os.getpgid(process.pid), signal.SIGTERM)  # Terminate the process group
+            print("PT subprocess terminated.")
+    
+    atexit.register(cleanup)  # Ensure cleanup is called on normal program exit
+
+    # Handle signals such as Ctrl+C
+    def handle_signal(signum, frame):
+        print(f"Received signal {signal.Signals(signum).name}, cleaning up...")
+        cleanup()
+        exit(0)
+
+    signal.signal(signal.SIGINT, handle_signal)  # Handle Ctrl+C
+    signal.signal(signal.SIGTERM, handle_signal)  # Handle kill signals
+
+    try:
+        # Read and print the subprocess output and error streams
+        for line in process.stdout:
+            print(line, end='')  # Print standard output
+        for err_line in process.stderr:
+            print(err_line, end='')  # Print standard error
+    except KeyboardInterrupt:
+        print("Keyboard interrupt detected. Terminating PT script...")
+        cleanup()
+    finally:
+        process.wait()  # Wait for the process to complete
+    
+    # Check the subprocess return code
     print('Return code:', process.returncode)
+
 
 def Run_Icc2_Script(script):
+    """
+    Run an IC Compiler II (icc2_shell) script using subprocess, ensuring child processes
+    are terminated when the main process exits or is killed.
+
+    Args:
+        script (str): The name of the script to run.
+    """
     if not check_command('icc2_shell'):
-        raise EnvironmentError("Error: 'icc2_shell' not found. Please ensure IC_Compiler2 is correctly installed and added to your PATH.")
+        raise EnvironmentError("Error: 'icc2_shell' not found. Please ensure IC Compiler II is correctly installed and added to your PATH.")
+    
     command = ['icc2_shell', '-f', '../' + script]
     working_directory = os.path.join(Global_var.work_dir, 'log/')
+    
+    # Create the working directory if it doesn't exist
     if not os.path.exists(working_directory):
         os.makedirs(working_directory)
+    
     print(f'Running ICC2 script: {script} in {working_directory}')
-    with subprocess.Popen(command, cwd=working_directory, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1, universal_newlines=True) as process:
-        for line in process.stdout:
-            print(line, end='')  # cmd output     
-        for err_line in process.stderr:
-            print(err_line, end='')  # cmd err
-        pass
-        
-        # wait for the process to exit
-        process.wait()
+    
+    # Start the subprocess and assign it to a new process group
+    process = subprocess.Popen(
+        command,
+        cwd=working_directory,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        bufsize=1,
+        universal_newlines=True,
+        preexec_fn=os.setsid  # Create a new process group
+    )
+    
+    # Register cleanup to terminate child processes on exit
+    def cleanup():
+        if process.poll() is None:  # Check if the process is still running
+            print("Terminating ICC2 subprocess...")
+            os.killpg(os.getpgid(process.pid), signal.SIGTERM)  # Terminate the process group
+            print("ICC2 subprocess terminated.")
+    
+    atexit.register(cleanup)  # Ensure cleanup is called on normal program exit
 
-    # check the return code
+    # Handle signals such as Ctrl+C
+    def handle_signal(signum, frame):
+        print(f"Received signal {signal.Signals(signum).name}, cleaning up...")
+        cleanup()
+        exit(0)
+
+    signal.signal(signal.SIGINT, handle_signal)  # Handle Ctrl+C
+    signal.signal(signal.SIGTERM, handle_signal)  # Handle kill signals
+
+    try:
+        # Read and print the subprocess output and error streams
+        for line in process.stdout:
+            print(line, end='')  # Print standard output
+        for err_line in process.stderr:
+            print(err_line, end='')  # Print standard error
+    except KeyboardInterrupt:
+        print("Keyboard interrupt detected. Terminating ICC2 script...")
+        cleanup()
+    finally:
+        process.wait()  # Wait for the process to complete
+    
+    # Check the subprocess return code
     print('Return code:', process.returncode)
+
 
 def Write_Pt_Cells_Scripts(design, verbose=False):
     file = os.path.join(Global_var.work_dir, 'pt_rpt.tcl')
@@ -241,3 +330,11 @@ def ReBuildAllRpt(design, verbose=False):
     ReBuildPtScripts.ReBuildPtScripts(design)
     Write_Pt_Scripts(design, ECO=False, VerilogInline=False, verbose=verbose)
     Run_Pt_Script(f'{design}_pt_rpt.tcl')
+    Delete_Temp_Scripts(design, verbose)
+
+if __name__ == "__main__": 
+    Write_Icc2_Scripts('mc_top')
+    Run_Icc2_Script('mc_top_icc2_rpt.tcl')
+    Write_Pt_Scripts('mc_top', ECO=False, VerilogInline=False)
+    Run_Pt_Script('mc_top_pt_rpt.tcl')
+    Delete_Temp_Scripts('mc_top')

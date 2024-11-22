@@ -2,8 +2,8 @@ set starttime [clock seconds]
 echo "INFORM: Start job at: " [clock format $starttime -gmt false]
 set is_si_enabled false
 
-set top_design aes_cipher_top
-#set top_design usbf_top
+#set top_design aes_cipher_top
+set top_design mc_top
 
 set link_library "* ../Timing_Lib/scc14nsfp_90sdb_9tc16_rvt_ssg_v0p63_125c_ccs.db"
 
